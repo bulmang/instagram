@@ -21,7 +21,7 @@ var theme = ThemeData(
     actionsIconTheme: IconThemeData(color: Colors.black), // APPBAR 위젯 테마 설정
   ),
   textTheme: TextTheme(
-    bodyText2: TextStyle(color: Colors.red), // 텍스트 테마 설정
+    bodyText2: TextStyle(color: Colors.black), // 텍스트 테마 설정
     bodyText1: TextStyle(color: Colors.red), // 텍스트 테마 설정
 
   ),
