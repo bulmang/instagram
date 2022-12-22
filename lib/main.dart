@@ -4,7 +4,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/rendering.dart'; // 스크롤 관련 유용한 함수들이 들어와 있음.
 import 'package:image_picker/image_picker.dart'; // imagepicker
-import 'dart:io'; 
+import 'dart:io';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+
 
 void main() {
   runApp(
@@ -29,9 +32,14 @@ class _MyAppState extends State<MyApp> {
   var userImage;
   var userContent;
 
+  saveData() async{
+    var storage = await SharedPreferences.getInstance(); // 저장 공간 오픈
+    storage.setString('이름','데이터');
+  }
+
   addMyData(){
     var myData = {
-      'id': data.length,
+      'id': data.length, // 게시물의 유니크 id 를 넣어줘야함.
       'image': userImage,
       'likes': 5,
       'date': 'July 25',
@@ -107,7 +115,7 @@ class _MyAppState extends State<MyApp> {
             )
           ]
         ),
-      body: [Home(data : data, addData : addData),Text("shop")][tab],
+      body: [Home(data : data),Text("shop")][tab],
       bottomNavigationBar: BottomNavigationBar(
         showSelectedLabels: false, // 라벨제거
         showUnselectedLabels: false,
@@ -128,9 +136,10 @@ class _MyAppState extends State<MyApp> {
   }
 }
 class Home extends StatefulWidget {
-  const Home({Key? key, this.data, this.addData}) : super(key: key);
+  const Home({Key? key, this.data, this.setUserContent, this.addMyData}) : super(key: key);
   final data;
-  final addData;
+  final setUserContent;
+  final addMyData;
 
   @override
   State<Home> createState() => _HomeState();
@@ -140,18 +149,12 @@ class _HomeState extends State<Home> {
 
   var scroll = ScrollController(); // 스크롤 정보들을 가져옴
 
-  getMore() async{
-    var result = await http.get(Uri.parse('https://codingapple1.github.io/app/more1.json'));
-    var result2 = jsonDecode(result.body);
-    widget.addData(result2);
-  }
-
   @override
   void initState() {
     super.initState();
     scroll.addListener(() { // addListener : 왼쪽 변수가 변할때마다 실행 해줌
       if (scroll.position.pixels == scroll.position.maxScrollExtent){ // 맨 밑까지 스크롤 했을 때 
-         getMore();// 게시물 더가져오기
+         // getMore();// 게시물 더가져오기
       }
     });
   }
@@ -163,7 +166,7 @@ class _HomeState extends State<Home> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            widget.data[i]['image'].runtimeType == String
+            widget.data[i]['image'].runtimeType == String // runtimeType : 타입
                 ? Image.network(widget.data[i]['image'])
                 : Image.file(widget.data[i]['image']),
              // 웹 이미지주소
@@ -200,7 +203,7 @@ class Upload extends StatelessWidget {
           Text('image upload'),
           TextField(onChanged: (text){
             setUserContent(text);
-          },), // 텍스트 값이 변할때 마다 실행됨.
+          },), // 고객이 텍스트 값이 입력 할때 마다 실행됨.
           IconButton(onPressed: (){
             Navigator.pop(context);
           },
