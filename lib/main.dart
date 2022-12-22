@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import './style.dart' as style; //다트파일 가져오기
 import 'package:http/http.dart' as http;
@@ -7,14 +8,25 @@ import 'package:image_picker/image_picker.dart'; // imagepicker
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
+import 'package:provider/provider.dart';
 
 
 void main() {
   runApp(
-      MaterialApp(
-          theme: style.theme,
-          home: MyApp()
-      )
+      ChangeNotifierProvider(
+        create: (c) => Store1(),
+        child: CupertinoApp(
+          localizationsDelegates: [
+            DefaultMaterialLocalizations.delegate,
+            DefaultCupertinoLocalizations.delegate,
+            DefaultWidgetsLocalizations.delegate,
+          ],
+            home: MyApp()
+        ),// cupertinoapp 안의 모든 위젯은 Stor1안에 있던 state 사용가능
+      ),
+
+
   );
 }
 
@@ -34,7 +46,14 @@ class _MyAppState extends State<MyApp> {
 
   saveData() async{
     var storage = await SharedPreferences.getInstance(); // 저장 공간 오픈
-    storage.setString('이름','데이터');
+    storage.setString('name','john');
+    storage.setBool('bool',true); //
+    storage.remove('name'); // 자료제거
+    var map = {'age' : 20};
+    storage.setString('map', jsonEncode(map)); // map 자료 저장하려면 json으로 바꿔서 저장해야됨.
+    storage.get('map');
+    var result = storage.getString('map') ?? ''; // 자료 출력
+    print(jsonDecode(result)); // 출력할 때 json자료를 map으로 변환
   }
 
   addMyData(){
@@ -83,6 +102,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState()  {
     super.initState();
+    saveData();
     getData();
   }
 
@@ -105,7 +125,7 @@ class _MyAppState extends State<MyApp> {
 
 
                 Navigator.push(context,
-                    MaterialPageRoute(builder: (c) => Upload(
+                    CupertinoPageRoute(builder: (c) => Upload(
                         userImage : userImage, setUserContent : setUserContent,
                         addMyData : addMyData,
                     ) )
@@ -166,12 +186,53 @@ class _HomeState extends State<Home> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            widget.data[i]['image'].runtimeType == String // runtimeType : 타입
-                ? Image.network(widget.data[i]['image'])
-                : Image.file(widget.data[i]['image']),
+            GestureDetector(
+              child: Hero(
+                tag: 'imageHero',
+                child:
+                widget.data[i]['image'].runtimeType == String // runtimeType : 타입
+                    ? Image.network(widget.data[i]['image'])
+                    : Image.file(widget.data[i]['image']),
+              ),
+              onTap: () {
+                Navigator.push(context, CupertinoPageRoute(builder: (_) {
+                  return Scaffold(
+                    body: GestureDetector(
+                      child: Center(
+                        child: Hero(
+                          tag: 'imageHero',
+                          child:
+                          widget.data[i]['image'].runtimeType == String // runtimeType : 타입
+                              ? Image.network(widget.data[i]['image'])
+                              : Image.file(widget.data[i]['image']),
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                  );
+                }));
+              },
+            ),
+
              // 웹 이미지주소
+            GestureDetector(
+              child: Text(widget.data[i]['user']),
+              onTap: (){
+                Navigator.push(context,
+                  PageRouteBuilder(
+                      pageBuilder: (c,a1,a2) => Profile(),
+                      transitionsBuilder: (c,a1,a2,child) => // a1이 제일중요 = animation objcet 페이지 전환 얼마나 되었는지 0~1 부터 알려준다 페이지 전환 시작 0 중간쯤이면 0.5 다되면 1
+                          FadeTransition(opacity: a1,child: child), // opacity 에 a1을 넣어서 fadein 효과
+                      transitionDuration: Duration(milliseconds: 500) // 애니메이션 동작 솓ㅅ
+                      // 애니메이션 위젯 FadeTransition에 입력하면 된다.
+                  )
+                );
+              },
+              
+            ),
             Text('좋아요 ${widget.data[i]['likes']}'),
-            Text('글쓴이 :${widget.data[i]['user']}'),
             Text('날짜 : ${widget.data[i]['date']}'),
             Text(widget.data[i]['content']),
           ],
@@ -209,6 +270,44 @@ class Upload extends StatelessWidget {
           },
               icon: Icon(Icons.close)
           )
+        ],
+      ),
+    );
+  }
+}
+class Store1 extends ChangeNotifier {
+  var name = 'john kim';
+  var follower = 0;
+  changeName(){
+    name = 'john park';
+    notifyListeners(); // state 수정후 재렌더링
+  }
+  plusFoloower(){
+    follower += 1;
+    notifyListeners();
+  }
+} // state 보관함 store
+
+class Profile extends StatelessWidget {
+  const Profile({Key? key, this.changeName}) : super(key: key);
+  final changeName;
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(context.watch<Store1>().name),),
+      body: Row(
+        children: [
+          Spacer(),
+          Icon(Icons.person_add_alt_1_outlined, size: 50,),
+          Spacer(),
+          Text(context.watch<Store1>().follower.toString(),style: TextStyle(fontSize: 30),),
+          Spacer(),
+          ElevatedButton(onPressed: (){
+            context.read<Store1>().plusFoloower();
+          }, child: Text('팔로우')),
+          Spacer()
         ],
       ),
     );
