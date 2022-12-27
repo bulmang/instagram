@@ -276,38 +276,41 @@ class Upload extends StatelessWidget {
   }
 }
 class Store1 extends ChangeNotifier {
-  var name = 'john kim';
+  var follow = '팔로우';
   var follower = 0;
-  changeName(){
-    name = 'john park';
-    notifyListeners(); // state 수정후 재렌더링
-  }
+  var friend = false;
   plusFoloower(){
-    follower += 1;
-    notifyListeners();
+    if (friend == false){
+      follower += 1;
+      follow = '팔로우 중';
+      friend = true;
+    } else {
+      follower -= 1;
+      follow = '팔로우';
+      friend = false;
+    }
+
+    notifyListeners(); //store 안 state 값 변경 후 재랜더링
   }
 } // state 보관함 store
 
 class Profile extends StatelessWidget {
-  const Profile({Key? key, this.changeName}) : super(key: key);
-  final changeName;
+  const Profile({Key? key, this.changeFollow}) : super(key: key);
+  final changeFollow;
 
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(context.watch<Store1>().name),),
+      appBar: AppBar(title: Text('John'),),
       body: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          Spacer(),
-          Icon(Icons.person_add_alt_1_outlined, size: 50,),
-          Spacer(),
-          Text(context.watch<Store1>().follower.toString(),style: TextStyle(fontSize: 30),),
-          Spacer(),
+          CircleAvatar(radius: 20,backgroundColor: Colors.grey,),
+          Text('팔로워 ${context.watch<Store1>().follower.toString()}명',style: TextStyle(fontSize: 20),),
           ElevatedButton(onPressed: (){
             context.read<Store1>().plusFoloower();
-          }, child: Text('팔로우')),
-          Spacer()
+          }, child: Text(context.watch<Store1>().follow)),
         ],
       ),
     );
